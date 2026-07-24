@@ -17,13 +17,22 @@ MODEL_URL="https://huggingface.co/SG161222/RealVisXL_V5.0/resolve/main/RealVisXL
 
 mkdir -p "$MODEL_DIR"
 if [ ! -f "$MODEL" ]; then
-  echo "Checkpoint not found, downloading RealVisXL V5.0 (~7GB, one-time)..."
-  if wget --no-check-certificate -q -O "$MODEL.tmp.$$" "$MODEL_URL"; then
-    mv -f "$MODEL.tmp.$$" "$MODEL"
+  echo "Checkpoint not found, downloading RealVisXL V5.0 (~7GB) via aria2 (16 parallel connections)..."
+  TMP="JuggernautXL.safetensors.dl.$$"
+  if aria2c -x16 -s16 -k1M --file-allocation=none --check-certificate=false \
+        --summary-interval=5 --console-log-level=warn \
+        -d "$MODEL_DIR" -o "$TMP" "$MODEL_URL"; then
+    mv -f "$MODEL_DIR/$TMP" "$MODEL"
     echo "Checkpoint downloaded to $MODEL"
   else
-    echo "ERROR: checkpoint download failed"
-    rm -f "$MODEL.tmp.$$"
+    echo "ERROR: checkpoint download failed; falling back to wget..."
+    if wget --no-check-certificate -q -O "$MODEL.tmp.$$" "$MODEL_URL"; then
+      mv -f "$MODEL.tmp.$$" "$MODEL"
+      echo "Checkpoint downloaded (wget) to $MODEL"
+    else
+      echo "ERROR: checkpoint download failed"
+      rm -f "$MODEL_DIR/$TMP" "$MODEL.tmp.$$"
+    fi
   fi
 else
   echo "Checkpoint already present at $MODEL"
