@@ -31,6 +31,14 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     cd stable-diffusion-webui && \
     pip install --no-cache-dir -r requirements_versions.txt
 
+# CLIP's legacy setup.py imports pkg_resources, which setuptools>=81 removed,
+# so prepare_environment() dies with "Couldn't install clip / No module named
+# pkg_resources". Pin setuptools<81 both in the main env AND via PIP_CONSTRAINT
+# so PEP517 build-isolation envs (used to build CLIP) also get the old version.
+RUN pip install --no-cache-dir "setuptools<81" && \
+    printf 'setuptools<81\n' > /etc/pip-constraints.txt
+ENV PIP_CONSTRAINT=/etc/pip-constraints.txt
+
 # Prepare environment
 RUN cd stable-diffusion-webui && \
     python -c "from launch import prepare_environment; prepare_environment()" --skip-torch-cuda-test
