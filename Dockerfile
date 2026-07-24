@@ -36,21 +36,16 @@ RUN cd stable-diffusion-webui && \
     python -c "from launch import prepare_environment; prepare_environment()" --skip-torch-cuda-test
 
 # Download models directly in the final image (no duplication!)
-RUN --mount=type=secret,id=HF_TOKEN \
-    mkdir -p /stable-diffusion-webui/models/Stable-diffusion && \
+# Чекпоинт — RealVisXL V5.0 (публичный, БЕЗ gated/токена): фотореалистичный
+# нецензурный SDXL. Имя файла оставлено JuggernautXL.safetensors, т.к. на него
+# ссылается override_settings в запросах и загрузчик A1111.
+RUN mkdir -p /stable-diffusion-webui/models/Stable-diffusion && \
     mkdir -p /stable-diffusion-webui/models/ESRGAN && \
     echo "Downloading models..." && \
-    HF_TOKEN_VALUE=$(cat /run/secrets/HF_TOKEN 2>/dev/null || echo "") && \
-    if [ -z "$HF_TOKEN_VALUE" ]; then \
-        echo "Warning: HF_TOKEN not provided, attempting download without auth..."; \
-        wget --no-check-certificate -q -O /stable-diffusion-webui/models/Stable-diffusion/JuggernautXL.safetensors https://huggingface.co/RunDiffusion/Juggernaut-XI-v11/resolve/main/Juggernaut-XI-byRunDiffusion.safetensors || exit 1; \
-        wget --no-check-certificate -q -O /stable-diffusion-webui/models/ESRGAN/4x_NMKD-Siax_200k.pth https://huggingface.co/gemasai/4x_NMKD-Siax_200k/resolve/main/4x_NMKD-Siax_200k.pth || exit 1; \
-    else \
-        wget --header="Authorization: Bearer $HF_TOKEN_VALUE" -q -O /stable-diffusion-webui/models/Stable-diffusion/JuggernautXL.safetensors https://huggingface.co/RunDiffusion/Juggernaut-XI-v11/resolve/main/Juggernaut-XI-byRunDiffusion.safetensors || exit 1; \
-        wget --header="Authorization: Bearer $HF_TOKEN_VALUE" -q -O /stable-diffusion-webui/models/ESRGAN/4x_NMKD-Siax_200k.pth https://huggingface.co/gemasai/4x_NMKD-Siax_200k/resolve/main/4x_NMKD-Siax_200k.pth || exit 1; \
-    fi && \
+    wget --no-check-certificate -q -O /stable-diffusion-webui/models/Stable-diffusion/JuggernautXL.safetensors https://huggingface.co/SG161222/RealVisXL_V5.0/resolve/main/RealVisXL_V5.0_fp16.safetensors || exit 1; \
+    wget --no-check-certificate -q -O /stable-diffusion-webui/models/ESRGAN/4x_NMKD-Siax_200k.pth https://huggingface.co/gemasai/4x_NMKD-Siax_200k/resolve/main/4x_NMKD-Siax_200k.pth || exit 1; \
     echo "Verifying downloads..." && \
-    test -f /stable-diffusion-webui/models/Stable-diffusion/JuggernautXL.safetensors || (echo "ERROR: JuggernautXL.safetensors not found" && exit 1) && \
+    test -f /stable-diffusion-webui/models/Stable-diffusion/JuggernautXL.safetensors || (echo "ERROR: checkpoint not found" && exit 1) && \
     test -f /stable-diffusion-webui/models/ESRGAN/4x_NMKD-Siax_200k.pth || (echo "ERROR: 4x_NMKD-Siax_200k.pth not found" && exit 1) && \
     ls -lh /stable-diffusion-webui/models/Stable-diffusion/ && \
     ls -lh /stable-diffusion-webui/models/ESRGAN/ && \
