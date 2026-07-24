@@ -74,6 +74,12 @@ COPY requirements.txt .
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir -r requirements.txt
 
+# hf_transfer: HuggingFace's fast, Xet-compatible downloader. Plain aria2
+# multi-connection gets 403 from HF's Xet CDN (per-range signed URLs); this
+# pulls the 7GB checkpoint correctly in parallel (~20-30s) in start.sh.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-cache-dir "huggingface_hub[hf_transfer]"
+
 COPY test_input.json .
 
 ADD src .
