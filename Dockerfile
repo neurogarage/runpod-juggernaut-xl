@@ -39,6 +39,13 @@ RUN pip install --no-cache-dir "setuptools<81" && \
     printf 'setuptools<81\n' > /etc/pip-constraints.txt
 ENV PIP_CONSTRAINT=/etc/pip-constraints.txt
 
+# Stability-AI/stablediffusion was deleted upstream (GitHub 404), so A1111's
+# hardcoded clone fails with "could not read Username / error 128". Point it at
+# w-e-w's mirror (same pinned commit cf1d67a6). GIT_TERMINAL_PROMPT=0 makes any
+# future missing repo fail fast instead of hanging on a credential prompt.
+ENV STABLE_DIFFUSION_REPO=https://github.com/w-e-w/stablediffusion.git \
+    GIT_TERMINAL_PROMPT=0
+
 # Prepare environment
 RUN cd stable-diffusion-webui && \
     python -c "from launch import prepare_environment; prepare_environment()" --skip-torch-cuda-test
