@@ -22,9 +22,18 @@ RUN git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git && \
     cd stable-diffusion-webui && \
     git reset --hard ${A1111_RELEASE}
 
-# Install xformers separately to reduce memory pressure
+# Pin torch/torchvision to A1111 v1.9.3's tested CUDA 12.1 build. Plain
+# `pip install xformers` now pulls torch 2.13+cu130 (CUDA 13.0), which RunPod
+# GPU drivers (max CUDA 12.7) can't initialise -> "NVIDIA driver too old" at
+# container start. cu121 runs on every RunPod GPU.
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-cache-dir xformers
+    pip install --no-cache-dir \
+      torch==2.1.2 torchvision==0.16.2 \
+      --index-url https://download.pytorch.org/whl/cu121
+
+# xformers matched to torch 2.1.2 (from PyPI; keeps the already-installed torch)
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-cache-dir xformers==0.0.23.post1
 
 # Install requirements_versions.txt with memory optimization
 RUN --mount=type=cache,target=/root/.cache/pip \
